@@ -1,0 +1,40 @@
+.head_whatsapp_btn .wa-consult-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #25d366;
+  color: #fff !important;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none !important;
+  line-height: 1.2;
+  transition: background 0.2s ease;
+}
+
+.head_whatsapp_btn .wa-consult-btn:hover {
+  background: #1da851;
+  color: #fff !important;
+}
+
+.head_whatsapp_btn .wa-consult-btn svg {
+  flex-shrink: 0;
+}
+
+.whatsapp_top_btn a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #fff !important;
+  text-decoration: none !important;
+  font-size: 14px;
+}
+
+.whatsapp_top_btn a:hover {
+  color: #25d366 !important;
+}
+
+.whatsapp_top_btn .fa-whatsapp {
+  font-size: 18px;
+}

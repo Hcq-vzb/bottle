@@ -1,0 +1,20 @@
+/* Keep modal content and close button above the dark overlay */
+div[id^="c_popbox"] .p_background {
+  z-index: 1 !important;
+}
+
+div[id^="c_popbox"] .p_container {
+  z-index: 3 !important;
+  position: relative !important;
+}
+
+div[id^="c_popbox"] .p_close {
+  z-index: 10 !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+div[id^="c_popbox"] .p_close .icon,
+div[id^="c_popbox"] .p_close svg {
+  pointer-events: none;
+}

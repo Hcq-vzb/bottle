@@ -1,0 +1,154 @@
+/* Homepage: A number of patents, strength protection — centered 3D coverflow */
+
+#c_effect_112-1690623837699 {
+  background-repeat: no-repeat !important;
+  background-size: cover !important;
+  background-position: center center !important;
+  position: relative;
+  overflow: hidden !important;
+  min-height: clamp(620px, 72vh, 820px) !important;
+  padding-top: 56px !important;
+  padding-bottom: 44px !important;
+  box-sizing: border-box;
+}
+
+#c_effect_112-1690623837699 .e_container-8,
+#c_effect_112-1690623837699 .e_loop-1,
+#c_effect_112-1690623837699 .e_loop-1 > div {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+#c_effect_112-1690623837699 .e_text-9 {
+  margin-bottom: 8px !important;
+}
+
+#c_effect_112-1690623837699 .e_text-10 {
+  margin-bottom: 16px !important;
+}
+
+#c_effect_112-1690623837699 .e_text-11 {
+  max-width: 920px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 12px !important;
+}
+
+#c_effect_112-1690623837699 .e_loop-1 {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  width: 94% !important;
+  max-width: 1400px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  min-height: 480px;
+}
+
+#c_effect_112-1690623837699 .e_loop-1 .honorSwip,
+#c_effect_112-1690623837699 .honorSwip.swiper-container {
+  overflow: hidden !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 auto;
+  padding: 8px 0 12px !important;
+  min-height: 440px;
+  perspective: 1200px;
+}
+
+#c_effect_112-1690623837699 .honorSwip .swiper-wrapper,
+#c_effect_112-1690623837699 .honorSwip .p_list.swiper-wrapper {
+  display: flex !important;
+  align-items: center;
+}
+
+#c_effect_112-1690623837699 .honorSwip .swiper-slide {
+  width: 260px !important;
+  height: 380px !important;
+  flex-shrink: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  background: transparent;
+}
+
+#c_effect_112-1690623837699 .honorSwip .e_image-2,
+#c_effect_112-1690623837699 .honorSwip .showihonor {
+  display: block !important;
+  visibility: visible !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: #fff;
+  padding: 8px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+}
+
+#c_effect_112-1690623837699 .honorSwip .e_image-2 img,
+#c_effect_112-1690623837699 .honorSwip .showihonor img {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-height: none !important;
+  object-fit: contain !important;
+  -webkit-box-reflect: below 4px linear-gradient(transparent 50%, rgba(255, 255, 255, 0.2));
+}
+
+#c_effect_112-1690623837699 .honorSwip .swiper-slide-shadow-left,
+#c_effect_112-1690623837699 .honorSwip .swiper-slide-shadow-right {
+  border-radius: 2px;
+}
+
+#c_effect_112-1690623837699 .swiper-pagination {
+  margin-top: 20px !important;
+}
+
+@media screen and (min-width: 1400px) {
+  #c_effect_112-1690623837699 .e_loop-1 {
+    max-width: 1500px !important;
+  }
+
+  #c_effect_112-1690623837699 .honorSwip .swiper-slide {
+    width: 280px !important;
+    height: 400px !important;
+  }
+}
+
+@media screen and (max-width: 1024px) {
+  #c_effect_112-1690623837699 {
+    min-height: 560px !important;
+  }
+
+  #c_effect_112-1690623837699 .honorSwip .swiper-slide {
+    width: 220px !important;
+    height: 320px !important;
+  }
+
+  #c_effect_112-1690623837699 .e_loop-1 {
+    min-height: 380px;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  #c_effect_112-1690623837699 {
+    min-height: 480px !important;
+    padding-bottom: 32px !important;
+  }
+
+  #c_effect_112-1690623837699 .e_loop-1 {
+    width: 96% !important;
+    min-height: 320px;
+  }
+
+  #c_effect_112-1690623837699 .honorSwip .swiper-slide {
+    width: 180px !important;
+    height: 260px !important;
+  }
+
+  #c_effect_112-1690623837699 .honorSwip.swiper-container {
+    min-height: 280px;
+  }
+}

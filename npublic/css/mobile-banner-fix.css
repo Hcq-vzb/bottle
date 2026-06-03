@@ -1,0 +1,47 @@
+/* Homepage hero banner — theme mobile uses height:23vh which squashes the slide */
+@media screen and (max-width: 1024px) {
+  #c_static_001_P_1080-1647501045930 {
+    min-height: auto !important;
+  }
+
+  #c_static_001_P_1080-1647501045930 .e_bannerD-1 .swiper-container {
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    margin-top: 56px !important;
+    aspect-ratio: 16 / 9 !important;
+    overflow: hidden !important;
+  }
+
+  #c_static_001_P_1080-1647501045930 .e_bannerD-1,
+  #c_static_001_P_1080-1647501045930 .e_bannerD-1 .swiper-wrapper,
+  #c_static_001_P_1080-1647501045930 .e_bannerD-1 .p_swiperContainer {
+    height: 100% !important;
+  }
+
+  #c_static_001_P_1080-1647501045930 .e_bannerD-1 .swiper-slide,
+  #c_static_001_P_1080-1647501045930 .e_bannerD-1 .p_slide {
+    height: 100% !important;
+    min-height: 100% !important;
+    background-size: cover !important;
+    background-position: center center !important;
+    background-repeat: no-repeat !important;
+  }
+
+  #c_static_001_P_1080-1647501045930 .e_bannerD-1 .swiper-pagination {
+    bottom: 12px !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    transform: none !important;
+    justify-content: center !important;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  #c_static_001_P_1080-1647501045930 .e_bannerD-1 .swiper-container {
+    margin-top: 52px !important;
+    aspect-ratio: 4 / 3 !important;
+  }
+}

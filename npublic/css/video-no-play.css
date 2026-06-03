@@ -1,0 +1,94 @@
+/* Video pages: keep thumbnails/layout, disable playback popup */
+
+.videoCock .p_video .cover {
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.videoCock .p_video .videoBox {
+  display: none !important;
+}
+
+.videoCock .p_video,
+.videoCock .videoIBox {
+  cursor: default !important;
+}
+
+body > .videoBox.show {
+  display: none !important;
+}
+
+/* Cases & Events: Video-page style cover (no playback) */
+.shouhou-video-cover {
+  margin: 0 auto;
+  max-width: 100%;
+}
+
+.shouhou-video-cover .e_video-7 {
+  width: 60%;
+  max-width: 920px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.shouhou-video-cover .p_video {
+  position: relative;
+  overflow: hidden;
+  height: 0;
+  padding-bottom: 56.25%;
+}
+
+.shouhou-video-cover .cover {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: hidden;
+  background: #000;
+  display: block !important;
+}
+
+.shouhou-video-cover .cover .coverImage {
+  width: 100%;
+  height: 100%;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.shouhou-video-cover .e_video-7:hover .cover .coverImage {
+  opacity: 0.5;
+}
+
+.shouhou-video-cover .cover .coverImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.shouhou-video-cover .cover .playIco {
+  position: absolute;
+  width: 74px;
+  height: 78px;
+  z-index: 2;
+  left: 50%;
+  top: 50%;
+  margin: -39px auto auto -37px;
+  transform: scale(0);
+  pointer-events: none;
+  transition: transform 0.3s ease;
+}
+
+.shouhou-video-cover .e_video-7:hover .cover .playIco {
+  transform: scale(1);
+}
+
+.shouhou-video-cover .p_video,
+.shouhou-video-cover .cover {
+  cursor: default !important;
+}
