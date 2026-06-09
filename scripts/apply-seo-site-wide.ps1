@@ -7,6 +7,36 @@ param(
 $Brand = 'KlWL Machinery'
 $BrandJunk = 'KlWL Machine_a high-tech enterprise integrating research'
 $Utf8 = [System.Text.UTF8Encoding]::new($false)
+$DefaultOgImage = 'https://www.bottleblowtech.com/omo-oss-image.thefastimg.com/portal-saas/pg2025032715012632289/cms/image/0c8b8e98-6fdc-4662-8c78-2f5045b18df6.png'
+
+# Keyword pyramid tiers (Google-aligned: title/description/H1 matter most; keywords for Bing/legacy)
+$Tier1Core = @(
+    'PET bottle blowing machine'
+    'stretch blow molding machine'
+    'plastic bottle making machine'
+    'bottle blowing machine manufacturer'
+)
+$Tier3LongTail = @{
+    SemiAuto   = 'semi automatic PET blowing machine'
+    Jar        = 'jar blow molding machine'
+    JarMaking  = 'plastic jar making machine'
+    HandFeed   = 'hand feeding blow molding machine'
+    Preform    = 'PET preform making machine'
+    Water      = 'water bottle production machine'
+    Capping    = 'bottle capping machine'
+    Compressor = 'air compressor for bottle blowing line'
+    Chiller    = 'industrial chiller for blow molding'
+    Dryer      = 'cold dryer for PET blowing line'
+    Mold       = 'PET bottle mold'
+    Economic   = 'economic blow molding machine'
+    HighSpeed  = 'high speed bottle blowing machine'
+    EnergySave = 'energy saving blow molding machine'
+}
+$Tier4Trust = @(
+    'bottle blowing machine manufacturer China'
+    'factory direct PET blowing machine'
+    'Jiangsu KlWL Machinery'
+)
 
 function Escape-HtmlAttr([string]$s) {
     if (-not $s) { return '' }
@@ -55,6 +85,162 @@ function Fix-Description([string]$desc, [string]$pageTitle) {
     return $d
 }
 
+function Get-AbsoluteOgImage([string]$content, [string]$baseUrl) {
+    $m = [regex]::Match($content, '<meta property="og:image" content="([^"]*)"')
+    $raw = if ($m.Success) { $m.Groups[1].Value.Trim() } else { '' }
+    if ($raw -eq '') {
+        $m2 = [regex]::Match($content, '<img[^>]+src="([^"]+omo-oss-image[^"]+)"')
+        if ($m2.Success) { $raw = $m2.Groups[1].Value.Trim() }
+    }
+    if ($raw -eq '') { return $DefaultOgImage }
+    if ($raw -match '^https?://') {
+        return ($raw -replace '/\.\./', '/')
+    }
+    $path = $raw -replace '^\./', '' -replace '^\.\./', ''
+    return "$baseUrl/$path"
+}
+
+function Join-Keywords([string[]]$terms) {
+    $unique = $terms | Where-Object { $_ -and $_.Trim() -ne '' } | Select-Object -Unique
+    return ($unique | Select-Object -First 5) -join ', '
+}
+
+function Get-ProductNameFromTitle([string]$title) {
+    return ($title -replace '\s\|\s*KlWL Machinery\s*$', '').Trim()
+}
+
+function Get-PyramidKeywords([string]$productName, [string]$webPath) {
+    $terms = [System.Collections.Generic.List[string]]::new()
+    $terms.Add('KlWL Machinery')
+    $n = ($productName.ToLower() -replace '[^a-z0-9\s\-]', ' ' -replace '\s{2,}', ' ').Trim()
+    $leaf = (Split-Path $webPath -Leaf).ToLower()
+    $baseName = [System.IO.Path]::GetFileNameWithoutExtension($leaf)
+
+    # Tier 2: model from title, else filename (e.g. K6_6_Cavity_..., QX9000_...)
+    $model = $null
+    if ($productName -match '\b([A-Z]{1,3}\d+[A-Z0-9\-]*)\b') {
+        $model = $Matches[1]
+    } elseif ($baseName -match '^([a-z]{1,3}\d+[a-z0-9\-]*)') {
+        $model = $Matches[1].ToUpper()
+    }
+    if ($model) {
+        if ($n -match 'stretch' -or $baseName -match 'stretch') {
+            $terms.Add("$model PET stretch blow molding machine")
+        } else {
+            $terms.Add("$model PET blowing machine")
+        }
+    }
+    if ($n -match '(\d+)\s*cavity' -or $baseName -match '(\d+)[_\s-]?cavity') {
+        $c = if ($Matches[1]) { $Matches[1] } else { '' }
+        if ($c) { $terms.Add("$c cavity bottle making machine") }
+    }
+
+    # Tier 3: long-tail by product type
+    if ($n -match 'semi[\s\-]?auto|semi automatic' -or $leaf -match 'semi_auto|semi-auto') {
+        $terms.Add($Tier3LongTail.SemiAuto)
+    }
+    if ($n -match 'jar' -or $leaf -match 'jar') {
+        $terms.Add($Tier3LongTail.Jar)
+        $terms.Add($Tier3LongTail.JarMaking)
+    }
+    if ($n -match 'hand[\s\-]?feed' -or $leaf -match 'hand_feed') {
+        $terms.Add($Tier3LongTail.HandFeed)
+    }
+    if ($n -match 'preform' -or $leaf -match 'preform') {
+        $terms.Add($Tier3LongTail.Preform)
+    }
+    if ($n -match '5[\s\-]?gallon|gallon' -or $leaf -match '5_gallon|gallon') {
+        $terms.Add('5 gallon bottle blowing machine')
+    }
+    if ($n -match 'water|mineral|beverage|soda') {
+        $terms.Add($Tier3LongTail.Water)
+    }
+    if ($n -match 'capping' -or $leaf -match 'capping') {
+        $terms.Add($Tier3LongTail.Capping)
+    }
+    if ($n -match 'compressor' -or $leaf -match 'compressor') {
+        $terms.Add($Tier3LongTail.Compressor)
+    }
+    if ($n -match 'chiller' -or $leaf -match 'chiller') {
+        $terms.Add($Tier3LongTail.Chiller)
+    }
+    if ($n -match 'cold[\s\-]?dryer|dryer' -or $leaf -match 'dryer') {
+        $terms.Add($Tier3LongTail.Dryer)
+    }
+    if ($n -match 'mold|mould' -and $n -notmatch 'blow.?mold|blow.?mould') {
+        $terms.Add($Tier3LongTail.Mold)
+    }
+    if ($n -match 'economic' -or $leaf -match 'ycq|economic') {
+        $terms.Add($Tier3LongTail.Economic)
+    }
+    if ($n -match 'energy[\s\-]?sav' -or $leaf -match 'energy') {
+        $terms.Add($Tier3LongTail.EnergySave)
+    }
+    if ($n -match 'high[\s\-]?speed' -or $leaf -match 'qh') {
+        $terms.Add($Tier3LongTail.HighSpeed)
+    }
+
+    # Tier 1: core commercial fallback
+    if ($n -match 'stretch') {
+        $terms.Add($Tier1Core[1])
+    }
+    if ($terms.Count -lt 4) {
+        $terms.Add($Tier1Core[0])
+    }
+    if ($terms.Count -lt 4) {
+        $terms.Add($Tier1Core[2])
+    }
+    if ($terms.Count -lt 4) {
+        $terms.Add('automatic blow molding machine')
+    }
+
+    return Join-Keywords $terms
+}
+
+function Get-Tier1Keywords([int]$pick = 3) {
+    return Join-Keywords (@('KlWL Machinery') + ($Tier1Core | Select-Object -First $pick))
+}
+
+function Get-Tier4Keywords() {
+    return Join-Keywords (@('KlWL Machinery') + ($Tier4Trust | Select-Object -First 2) + @($Tier1Core[0]))
+}
+
+function Get-NewsKeywords([string]$articleTitle) {
+    $terms = [System.Collections.Generic.List[string]]::new()
+    $terms.Add('KlWL Machinery')
+    $t = ($articleTitle.ToLower() -replace '[^a-z0-9\s\-]', ' ' -replace '\s{2,}', ' ').Trim()
+
+    if ($t -match '(\d+)\s*cavity') { $terms.Add("$($Matches[1]) cavity bottle making machine") }
+    if ($t -match 'pet') { $terms.Add($Tier1Core[0]) }
+    if ($t -match 'stretch') { $terms.Add($Tier1Core[1]) }
+    if ($t -match 'semi.?auto|semi automatic') { $terms.Add($Tier3LongTail.SemiAuto) }
+    if ($t -match 'jar') { $terms.Add($Tier3LongTail.Jar) }
+    if ($t -match 'water|mineral|beverage|soda') { $terms.Add($Tier3LongTail.Water) }
+    if ($t -match 'plastic|bottle') { $terms.Add($Tier1Core[2]) }
+    if ($t -match 'blow|mold|mould') { $terms.Add('automatic blow molding machine') }
+
+    if ($terms.Count -lt 3) { $terms.Add($Tier1Core[0]) }
+    if ($terms.Count -lt 4) { $terms.Add($Tier1Core[2]) }
+
+    return Join-Keywords $terms
+}
+
+function Is-ProductDetailPage([string]$webPath, [string]$content) {
+    if (Is-404Page $content) { return $false }
+    if ($webPath -like 'products_detail/*') { return $true }
+    if ($webPath -match '_(Machine|Blowing_Machine|Moulding_Machine|Making_Machine)\.html$') { return $true }
+    if ($webPath -match '^(K|Q|YC|SK|J|H|KB|KX|QJ)[0-9A-Z_\-]+\.html$') { return $true }
+    if ($webPath -match 'Cavity_.*\.html$') { return $true }
+    if ($webPath -match '^(Air_Compressor|Chiller|Cold_Dryer|Blowing_Machine_Mold)\.html$') { return $true }
+    return $false
+}
+
+function Is-404Page([string]$content) {
+    if ($content -match '<title>Page (404|Not Found)\s*\|\s*KlWL Machinery</title>') { return $true }
+    if ($content -match '404_b26d1bad248c150dbac90b0e20e5dc3a') { return $true }
+    return $false
+}
+
 function Should-SkipHtml([string]$rel) {
     $r = $rel -replace '\\', '/'
     if ($r -match '^scripts/node_modules/') { return $true }
@@ -74,75 +260,122 @@ $PageOverrides = @{
     'products.html' = @{
         Title       = 'PET Bottle Blowing Machines | Products | KlWL Machinery'
         Description = 'Explore KlWL Machinery PET and plastic bottle blowing machines - automatic, semi-automatic, stretch blow molding and jar machines. Factory direct from bottleblowtech.com.'
-        Keywords    = 'KlWL Machinery, stretch blow molding machine, plastic jar making machine, water bottle production machine'
+        Keywords    = (Get-Tier1Keywords 3)
     }
     'contact.html' = @{
         Title       = 'Contact KlWL Machinery | Get a Quote'
         Description = 'Contact KlWL Machinery for bottle blowing machine quotes and technical support. Jiangsu KlWL Machinery Manufacturing Group Co., Ltd. - fast response worldwide.'
-        Keywords    = 'KlWL Machinery, water bottle production machine, jar making machine, stretch blow molding machine'
+        Keywords    = 'KlWL Machinery, bottle blowing machine quote, factory direct PET blowing machine, bottle blowing machine manufacturer China'
     }
     'jianjie.html' = @{
         Title       = 'About KlWL Machinery | Bottle Blowing Machine Manufacturer'
         Description = 'About Jiangsu KlWL Machinery Manufacturing Group Co., Ltd. - high-tech PET bottle blowing machine manufacturer founded in 2007, serving 170+ countries worldwide.'
-        Keywords    = 'KlWL Machinery, plastic bottle manufacturing equipment, plastic bottle making machine, pet bottle making machine'
+        Keywords    = (Get-Tier4Keywords)
     }
     'advantages.html' = @{
         Title       = 'Enterprise Advantages | KlWL Machinery'
         Description = 'Discover KlWL Machinery enterprise advantages - R&D, production and global service for PET and plastic bottle blowing machines since 2007.'
-        Keywords    = 'KlWL Machinery, plastic blowing machine, automatic blow molding machine'
+        Keywords    = 'KlWL Machinery, bottle blowing machine manufacturer, PET bottle blowing machine, factory direct PET blowing machine'
     }
     'fazhan.html' = @{
         Title       = 'Corporate Vision | KlWL Machinery'
         Description = 'KlWL Machinery corporate vision - leading PET and plastic bottle blowing machine manufacturer from Jiangsu, China.'
-        Keywords    = 'KlWL Machinery, plastic blowing machine, automatic blow molding machine'
+        Keywords    = 'KlWL Machinery, bottle blowing machine manufacturer China, Jiangsu KlWL Machinery, PET bottle blowing machine'
     }
     'Download.html' = @{
         Title       = 'Downloads | KlWL Machinery'
         Description = 'Download KlWL Machinery product catalogs and technical resources for PET bottle blowing machines.'
-        Keywords    = 'KlWL Machinery, plastic blowing machine, automatic blow molding machine'
+        Keywords    = 'KlWL Machinery, PET bottle blowing machine catalog, stretch blow molding machine, plastic bottle making machine'
     }
 }
 
 $SeriesSeo = @{
     'Q_Series_Energy_Saving_PET_Blowing_Machine.html' = @{
-        Keywords    = 'KlWL Machinery, PET bottle blowing machine, energy saving blow molding machine, automatic bottle blowing machine'
+        Keywords    = 'KlWL Machinery, PET bottle blowing machine, energy saving blow molding machine, stretch blow molding machine'
         Description = 'KlWL Machinery Q Series energy-saving PET bottle blowing machines - high output, lower power consumption. Automatic stretch blow molding from China factory direct.'
     }
+    'K_Series_Fast_Bottle_Blowing_Machine.html' = @{
+        Keywords    = 'KlWL Machinery, PET bottle blowing machine, automatic blow molding machine, plastic bottle making machine'
+        Description = 'KlWL Machinery K Series fast bottle blowing machines - high-speed automatic PET blow molding for water and beverage bottle production.'
+    }
     'H_Series_Hand_Feeding_Blowing_Machine.html' = @{
-        Keywords    = 'KlWL Machinery, hand feeding blow molding machine, semi automatic PET blowing machine'
+        Keywords    = 'KlWL Machinery, hand feeding blow molding machine, semi automatic PET blowing machine, plastic bottle making machine'
         Description = 'KlWL Machinery H Series hand feeding bottle blowing machines for flexible PET bottle production. Ideal for startups and custom bottle runs.'
     }
     'J_Series_Jar_Blow_Molding_Machine.html' = @{
-        Keywords    = 'KlWL Machinery, jar blowing machine, plastic jar making machine, PET jar manufacturing machine'
+        Keywords    = 'KlWL Machinery, jar blow molding machine, plastic jar making machine, PET jar manufacturing machine'
         Description = 'KlWL Machinery J Series jar blow molding machines for plastic and PET jars. Multi-cavity automatic production from factory direct.'
     }
     'YC_Series_Semi_Auto_PET_Blowing_Machine.html' = @{
-        Keywords    = 'KlWL Machinery, semi automatic PET blowing machine, semi auto blow molding machine'
+        Keywords    = 'KlWL Machinery, semi automatic PET blowing machine, semi auto blow molding machine, plastic bottle making machine'
         Description = 'KlWL Machinery YC Series semi-automatic PET blowing machines - cost-effective bottle production for water, oil and packaging bottles.'
     }
     'YCQ_Series_Economic_Blow_Molding_Machine.html' = @{
-        Keywords    = 'KlWL Machinery, economic blow molding machine, PET blow molding machine'
+        Keywords    = 'KlWL Machinery, economic blow molding machine, PET bottle blowing machine, semi automatic PET blowing machine'
         Description = 'KlWL Machinery YCQ Series economic blow molding machines - reliable PET bottle production at competitive factory-direct pricing.'
     }
     'QH_Series.html' = @{
-        Keywords    = 'KlWL Machinery, high speed bottle blowing machine, PET blowing machine'
+        Keywords    = 'KlWL Machinery, high speed bottle blowing machine, PET bottle blowing machine, stretch blow molding machine'
         Description = 'KlWL Machinery QH Series high-performance PET bottle blowing machines for high-speed production lines.'
     }
     'QJ_Series.html' = @{
-        Keywords    = 'KlWL Machinery, jar making machine, auto jar making machine, blow molding machine'
+        Keywords    = 'KlWL Machinery, jar making machine, jar blow molding machine, plastic jar making machine'
         Description = 'KlWL Machinery QJ Series auto jar making machines - multi-cavity blow molding for PET and plastic jars.'
     }
     'Auxiliary_Machine_Series.html' = @{
-        Keywords    = 'KlWL Machinery, air compressor, chiller, cold dryer, bottle blowing auxiliary equipment'
+        Keywords    = 'KlWL Machinery, air compressor for bottle blowing line, industrial chiller for blow molding, cold dryer for PET blowing line'
         Description = 'KlWL Machinery auxiliary equipment for bottle blowing lines - air compressors, chillers, cold dryers and more.'
     }
     'Blowing_Machine_Mold.html' = @{
-        Keywords    = 'KlWL Machinery, blow mold, PET bottle mold, blowing machine mold'
+        Keywords    = 'KlWL Machinery, PET bottle mold, blow mold, blowing machine mold'
         Description = 'KlWL Machinery blow molds and PET bottle molds - precision tooling for bottle blowing production lines.'
     }
     'Capping_Machine_Series.html' = @{
-        Keywords    = 'KlWL Machinery, capping machine, bottle capping machine, multi cavity capping machine'
+        Keywords    = 'KlWL Machinery, bottle capping machine, capping machine, multi cavity capping machine'
         Description = 'KlWL Machinery capping machine series - high-speed multi-cavity capping for PET bottle production lines.'
+    }
+}
+
+$LandingPageSeo = @{
+    'best-6-cavity-pet-blowing-machine.html' = @{
+        Title       = '6 Cavity PET Blowing Machine | KlWL Machinery'
+        Description = 'KlWL Machinery 6 cavity PET blowing machine for high-speed beverage bottle production. Automatic stretch blow molding with factory-direct pricing and global support.'
+        Keywords    = 'KlWL Machinery, 6 cavity PET blowing machine, stretch blow molding machine, beverage bottle making machine'
+    }
+    'best-4-cavity-pet-bottle-blowing-machine.html' = @{
+        Title       = '4 Cavity PET Bottle Blowing Machine | KlWL Machinery'
+        Description = 'KlWL Machinery 4 cavity PET bottle blowing machine for efficient water and beverage bottle production. Reliable automatic blow molding from China factory direct.'
+        Keywords    = 'KlWL Machinery, 4 cavity PET bottle blowing machine, automatic blow molding machine, water bottle production machine'
+    }
+    'best-mineral-water-bottle-making-machine-factory.html' = @{
+        Title       = 'Mineral Water Bottle Making Machine | KlWL Machinery'
+        Description = 'Factory-direct mineral water bottle making machines from KlWL Machinery. PET stretch blow molding systems for high-volume water bottle production worldwide.'
+        Keywords    = 'KlWL Machinery, mineral water bottle making machine, water bottle production machine, PET bottle blowing machine'
+    }
+    'quality-semi-automatic-pet-blowing-machine-manufacturer.html' = @{
+        Title       = 'Semi Automatic PET Blowing Machine Manufacturer | KlWL Machinery'
+        Description = 'KlWL Machinery semi automatic PET blowing machines for cost-effective bottle production. Ideal for startups, custom runs and flexible manufacturing.'
+        Keywords    = 'KlWL Machinery, semi automatic PET blowing machine, semi auto blow molding machine, plastic bottle making machine'
+    }
+    'quality-plastic-bottle-blow-molding-machine-manufacturer.html' = @{
+        Title       = 'Plastic Bottle Blow Molding Machine Manufacturer | KlWL Machinery'
+        Description = 'KlWL Machinery plastic bottle blow molding machines for water, oil, medical and packaging bottles. Factory direct from Jiangsu, China since 2007.'
+        Keywords    = 'KlWL Machinery, plastic bottle blow molding machine, blow molding machine manufacturer, PET bottle blowing machine'
+    }
+    'quality-2-cavity-blow-moulding-machine-manufacturer.html' = @{
+        Title       = '2 Cavity Blow Moulding Machine Manufacturer | KlWL Machinery'
+        Description = 'KlWL Machinery 2 cavity blow moulding machines for small to medium bottle production. Compact, efficient PET blow molding from factory direct.'
+        Keywords    = 'KlWL Machinery, 2 cavity blow moulding machine, PET blow molding machine, bottle blowing machine manufacturer'
+    }
+    'newest-plastic-bottle-making-machine-manufacturer.html' = @{
+        Title       = 'Plastic Bottle Making Machine Manufacturer | KlWL Machinery'
+        Description = 'Latest plastic bottle making machines from KlWL Machinery - automatic and semi-automatic PET blow molding for global manufacturers.'
+        Keywords    = 'KlWL Machinery, plastic bottle making machine, PET bottle blowing machine, bottle blowing machine manufacturer'
+    }
+    'newest-plastic-bottle-moulding-machine-factory.html' = @{
+        Title       = 'Plastic Bottle Moulding Machine Factory | KlWL Machinery'
+        Description = 'KlWL Machinery plastic bottle moulding machine factory - stretch blow molding systems, jar machines and auxiliary equipment. Export to 170+ countries.'
+        Keywords    = 'KlWL Machinery, plastic bottle moulding machine, stretch blow molding machine, bottle blowing machine factory'
     }
 }
 
@@ -183,10 +416,15 @@ Get-ChildItem -Path $SiteRoot -Recurse -Filter *.html -File | ForEach-Object {
         $title = $o.Title
         $description = $o.Description
         $keywords = $o.Keywords
+    } elseif ($LandingPageSeo.ContainsKey($webPath)) {
+        $o = $LandingPageSeo[$webPath]
+        $title = $o.Title
+        $description = $o.Description
+        $keywords = $o.Keywords
     } elseif ($NewsListTitles.ContainsKey($webPath)) {
         $title = $NewsListTitles[$webPath]
         $description = "$Brand news and industry updates about PET bottle blowing machines, blow molding technology and KlWL Machinery exhibitions."
-        $keywords = 'KlWL Machinery, plastic blowing machine, automatic blow molding machine'
+        $keywords = Get-Tier1Keywords 3
     } elseif ($SeriesSeo.ContainsKey($webPath)) {
         $s = $SeriesSeo[$webPath]
         $title = Get-CleanPageTitle $rawTitle
@@ -198,7 +436,7 @@ Get-ChildItem -Path $SiteRoot -Recurse -Filter *.html -File | ForEach-Object {
             $title = 'PET Bottle Blowing Machines | Product List | KlWL Machinery'
         }
         $description = 'Browse KlWL Machinery PET and plastic bottle blowing machines. Automatic and semi-automatic models for water, oil, jar and packaging bottles - factory direct.'
-        $keywords = 'KlWL Machinery, PET bottle blowing machine, plastic bottle blowing machine, stretch blow molding machine'
+        $keywords = Get-Tier1Keywords 3
     } elseif ($webPath -like 'news_detail/*') {
         $title = Get-CleanPageTitle $rawTitle
         $title = $title -replace '&amp;amp;', '&amp;'
@@ -212,32 +450,43 @@ Get-ChildItem -Path $SiteRoot -Recurse -Filter *.html -File | ForEach-Object {
             $description = "$articleTitle. Industry news from $Brand, PET bottle blowing machine manufacturer in China."
             if ($description.Length -gt 320) { $description = $description.Substring(0, 317).Trim() + '...' }
         }
-        $keywords = 'KlWL Machinery, plastic blowing machine, automatic blow molding machine'
+        $keywords = Get-NewsKeywords $articleTitle
     } elseif ($webPath -like 'news_lsit/*') {
         $title = Get-CleanPageTitle $rawTitle
         if ($title -match 'News_News|News_Knowledge|News_Company') {
             $title = ($title -replace 'News_News', 'News' -replace 'News_Knowledge', 'Knowledge' -replace 'News_Company News', 'Company News' -replace 'News_Show information', 'News')
         }
         $description = "$Brand news and updates on PET bottle blowing machines, blow molding technology and global exhibitions."
-        $keywords = 'KlWL Machinery, plastic blowing machine, automatic blow molding machine'
+        $keywords = Get-Tier1Keywords 3
+    } elseif (Is-ProductDetailPage $webPath $content) {
+        $title = Get-CleanPageTitle $rawTitle
+        $productName = Get-ProductNameFromTitle $title
+        $m = [regex]::Match($content, '<meta name="description" content="([^"]*)"')
+        $rawDesc = if ($m.Success) { $m.Groups[1].Value } else { '' }
+        $description = Fix-Description $rawDesc $title
+        $keywords = Get-PyramidKeywords $productName $webPath
     } else {
         $title = Get-CleanPageTitle $rawTitle
         $m = [regex]::Match($content, '<meta name="description" content="([^"]*)"')
         $rawDesc = if ($m.Success) { $m.Groups[1].Value } else { '' }
         $description = Fix-Description $rawDesc $title
-        $m2 = [regex]::Match($content, '<meta name="keywords" content="([^"]*)"')
-        $keywords = if ($m2.Success -and $m2.Groups[1].Value.Trim() -ne '') {
-            $kw = $m2.Groups[1].Value
-            if ($kw -notmatch 'KlWL') { "KlWL Machinery, $kw" } else { $kw -replace '\bKlWL Machine\b', $Brand }
-        } else {
-            $base = ($title -replace '\s\|\s*KlWL Machinery\s*$', '').Trim()
-            "KlWL Machinery, $base, bottle blowing machine"
-        }
+        $productName = Get-ProductNameFromTitle $title
+        $keywords = Get-PyramidKeywords $productName $webPath
     }
 
     $et = Escape-HtmlAttr $title
     $ed = Escape-HtmlAttr $description
     $ek = Escape-HtmlAttr $keywords
+    $ogImage = Escape-HtmlAttr (Get-AbsoluteOgImage $content $BaseUrl)
+
+    if (Is-404Page $content) {
+        $title = 'Page Not Found | KlWL Machinery'
+        $description = 'The page you requested was not found. Browse KlWL Machinery PET and plastic bottle blowing machines or contact us for a quote.'
+        $keywords = 'KlWL Machinery, PET bottle blowing machine'
+        $et = Escape-HtmlAttr $title
+        $ed = Escape-HtmlAttr $description
+        $ek = Escape-HtmlAttr $keywords
+    }
 
     $content = [regex]::Replace($content, '<title>[^<]*</title>', "<title>$et</title>")
     $content = [regex]::Replace($content, '<meta name="description" content="[^"]*"', "<meta name=`"description`" content=`"$ed`"")
@@ -247,6 +496,27 @@ Get-ChildItem -Path $SiteRoot -Recurse -Filter *.html -File | ForEach-Object {
     $content = [regex]::Replace($content, '<meta property="og:description" content="[^"]*"', "<meta property=`"og:description`" content=`"$ed`"")
     $content = [regex]::Replace($content, '<meta property="og:site_name" content="[^"]*"', "<meta property=`"og:site_name`" content=`"$Brand`"")
     $content = [regex]::Replace($content, '<meta property="og:url" content="[^"]*"', "<meta property=`"og:url`" content=`"$absUrl`"")
+    if ($content -match '<meta property="og:image"') {
+        $content = [regex]::Replace($content, '<meta property="og:image" content="[^"]*"', "<meta property=`"og:image`" content=`"$ogImage`"")
+    } else {
+        $content = $content -replace '(<meta property="og:url"[^>]+>)', "`$1`n<meta property=`"og:image`" content=`"$ogImage`"/>"
+    }
+    if ($content -notmatch 'property="og:type"') {
+        $content = $content -replace '(<meta property="og:site_name"[^>]+>)', "`$1`n<meta property=`"og:type`" content=`"website`"/>`n<meta property=`"og:locale`" content=`"en_US`"/>"
+    }
+    if ($content -match 'property="twitter:image"') {
+        $content = [regex]::Replace($content, '<meta property="twitter:image" content="[^"]*"', "<meta property=`"twitter:image`" content=`"$ogImage`"")
+    } elseif ($content -match 'name="twitter:card"') {
+        $content = $content -replace '(<meta name="twitter:card"[^>]+>)', "<meta property=`"twitter:image`" content=`"$ogImage`"/>`n`$1"
+    }
+
+    if (Is-404Page $orig) {
+        if ($content -notmatch 'name="robots"') {
+            $content = $content -replace '(<meta name="description"[^>]+>)', "`$1`n        <meta name=`"robots`" content=`"noindex, follow`"/>"
+        } else {
+            $content = [regex]::Replace($content, '<meta name="robots" content="[^"]*"', '<meta name="robots" content="noindex, follow"')
+        }
+    }
 
     $content = [regex]::Replace($content, '<meta name="twitter:title" content="[^"]*"', "<meta name=`"twitter:title`" content=`"$et`"")
     $content = [regex]::Replace($content, '<meta name="twitter:description" content="[^"]*"', "<meta name=`"twitter:description`" content=`"$ed`"")

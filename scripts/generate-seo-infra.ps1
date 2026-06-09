@@ -6,7 +6,7 @@ param(
 
 $Utf8 = [System.Text.UTF8Encoding]::new($false)
 
-function Should-SkipSitemap([string]$rel) {
+function Should-SkipSitemap([string]$rel, [string]$htmlContent) {
     $r = $rel -replace '\\', '/'
     if ($r -match '^scripts/') { return $true }
     if ($r -match '^omo-oss-image\.thefastimg\.com/') { return $true }
@@ -15,6 +15,9 @@ function Should-SkipSitemap([string]$rel) {
     if ($r -match '^intelling/') { return $true }
     if ($r -match '^result') { return $true }
     if ($r -match 'successfully\.html$') { return $true }
+    if ($htmlContent -match '<title>Page (404|Not Found)\s*\|\s*KlWL Machinery</title>') { return $true }
+    if ($htmlContent -match '404_b26d1bad248c150dbac90b0e20e5dc3a') { return $true }
+    if ($htmlContent -match '<meta name="robots" content="[^"]*noindex') { return $true }
     return $false
 }
 
@@ -41,7 +44,8 @@ Write-Host 'Wrote robots.txt'
 $urls = [System.Collections.Generic.List[string]]::new()
 Get-ChildItem -Path $SiteRoot -Recurse -Filter *.html -File | ForEach-Object {
     $rel = $_.FullName.Substring($SiteRoot.Length + 1)
-    if (Should-SkipSitemap $rel) { return }
+    $htmlContent = [System.IO.File]::ReadAllText($_.FullName)
+    if (Should-SkipSitemap $rel $htmlContent) { return }
     $webPath = ($rel -replace '\\', '/')
     $loc = if ($webPath -eq 'index.html') { "$BaseUrl/" } else { "$BaseUrl/$webPath" }
     $pri = Get-Priority $webPath
