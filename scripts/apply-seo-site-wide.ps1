@@ -109,6 +109,79 @@ function Get-ProductNameFromTitle([string]$title) {
     return ($title -replace '\s\|\s*KlWL Machinery\s*$', '').Trim()
 }
 
+function Get-ProductH1FromContent([string]$content) {
+    $m = [regex]::Match($content, '<h1 class="e_h1-44[^"]*"[^>]*>\s*([\s\S]*?)\s*</h1>')
+    if ($m.Success) {
+        $h1 = ($m.Groups[1].Value -replace '<[^>]+>', '' -replace '\s{2,}', ' ').Trim()
+        if ($h1 -and $h1 -notmatch '^(undefined|null|Picture Name|ONLINE MESSAGE|图片名称)$') {
+            return $h1
+        }
+    }
+    return ''
+}
+
+function Test-IsSpamProductTitle([string]$base) {
+    if (-not $base) { return $true }
+    if ($base -cmatch '^[a-z]') { return $true }
+    if ($base -match '^(best|newest|quality)\b') { return $true }
+    return $false
+}
+
+function Format-PyramidProductTitle([string]$name) {
+    if (-not $name) { return '' }
+    $name = ($name -replace '\s{2,}', ' ').Trim()
+    $ti = [System.Globalization.CultureInfo]::GetCultureInfo('en-US').TextInfo
+    $smallWords = @('a', 'an', 'the', 'and', 'or', 'for', 'of', 'in', 'to')
+    $words = $name -split '\s+'
+    $seriesCodes = @('YC', 'YCQ', 'SK', 'QH', 'QJ', 'KX', 'KB', 'PET', 'Q', 'K', 'H', 'J')
+    $out = for ($i = 0; $i -lt $words.Count; $i++) {
+        $w = $words[$i]
+        if ($seriesCodes -contains $w.ToUpper()) { $w.ToUpper() }
+        elseif ($w -match '^[A-Z]{1,3}\d+[A-Z0-9\-]*$' -or $w -match '^[A-Z]{1,3}[A-Z0-9]*-\d') { $w }
+        elseif ($w.ToUpper() -eq 'PET') { 'PET' }
+        elseif ($w -match '^\d+$') { $w }
+        else {
+            $lower = $w.ToLower()
+            if ($i -gt 0 -and $smallWords -contains $lower) { $lower }
+            else { $ti.ToTitleCase($lower) }
+        }
+    }
+    return ($out -join ' ')
+}
+
+function Get-ProductNameFromFilename([string]$webPath) {
+    $leaf = Split-Path $webPath -Leaf
+    $base = [System.IO.Path]::GetFileNameWithoutExtension($leaf)
+    if ($base -match '^c-_detailId=' -or $base -match '^\d+$') { return '' }
+    $name = $base -replace '_', ' '
+    return Format-PyramidProductTitle $name
+}
+
+function Get-PyramidProductTitle([string]$content, [string]$webPath, [string]$rawTitle) {
+    $h1 = Get-ProductH1FromContent $content
+    $name = $null
+
+    if ($h1) {
+        $name = Format-PyramidProductTitle $h1
+    }
+    if (-not $name) {
+        $name = Get-ProductNameFromFilename $webPath
+    }
+    if (-not $name) {
+        $cleaned = Get-CleanPageTitle $rawTitle
+        $base = Get-ProductNameFromTitle $cleaned
+        if (-not (Test-IsSpamProductTitle $base)) {
+            $name = Format-PyramidProductTitle $base
+        }
+    }
+    if (-not $name) {
+        $name = Get-ProductNameFromFilename $webPath
+    }
+    if (-not $name) { $name = 'Product' }
+
+    return "$name | $Brand"
+}
+
 function Get-PyramidKeywords([string]$productName, [string]$webPath) {
     $terms = [System.Collections.Generic.List[string]]::new()
     $terms.Add('KlWL Machinery')
@@ -228,9 +301,10 @@ function Get-NewsKeywords([string]$articleTitle) {
 function Is-ProductDetailPage([string]$webPath, [string]$content) {
     if (Is-404Page $content) { return $false }
     if ($webPath -like 'products_detail/*') { return $true }
-    if ($webPath -match '_(Machine|Blowing_Machine|Moulding_Machine|Making_Machine)\.html$') { return $true }
+    if ($webPath -match '_(Machine|machine|Blowing_Machine|Moulding_Machine|Making_Machine|capping_machine)\.html$') { return $true }
     if ($webPath -match '^(K|Q|YC|SK|J|H|KB|KX|QJ)[0-9A-Z_\-]+\.html$') { return $true }
     if ($webPath -match 'Cavity_.*\.html$') { return $true }
+    if ($webPath -match '_capping_machine\.html$') { return $true }
     if ($webPath -match '^(Air_Compressor|Chiller|Cold_Dryer|Blowing_Machine_Mold)\.html$') { return $true }
     return $false
 }
@@ -291,46 +365,57 @@ $PageOverrides = @{
 
 $SeriesSeo = @{
     'Q_Series_Energy_Saving_PET_Blowing_Machine.html' = @{
+        Title       = 'Q Series Energy Saving PET Blowing Machine'
         Keywords    = 'KlWL Machinery, PET bottle blowing machine, energy saving blow molding machine, stretch blow molding machine'
         Description = 'KlWL Machinery Q Series energy-saving PET bottle blowing machines - high output, lower power consumption. Automatic stretch blow molding from China factory direct.'
     }
     'K_Series_Fast_Bottle_Blowing_Machine.html' = @{
+        Title       = 'K Series Fast Bottle Blowing Machine'
         Keywords    = 'KlWL Machinery, PET bottle blowing machine, automatic blow molding machine, plastic bottle making machine'
         Description = 'KlWL Machinery K Series fast bottle blowing machines - high-speed automatic PET blow molding for water and beverage bottle production.'
     }
     'H_Series_Hand_Feeding_Blowing_Machine.html' = @{
+        Title       = 'H Series Hand Feeding Blowing Machine'
         Keywords    = 'KlWL Machinery, hand feeding blow molding machine, semi automatic PET blowing machine, plastic bottle making machine'
         Description = 'KlWL Machinery H Series hand feeding bottle blowing machines for flexible PET bottle production. Ideal for startups and custom bottle runs.'
     }
     'J_Series_Jar_Blow_Molding_Machine.html' = @{
+        Title       = 'J Series Jar Blow Molding Machine'
         Keywords    = 'KlWL Machinery, jar blow molding machine, plastic jar making machine, PET jar manufacturing machine'
         Description = 'KlWL Machinery J Series jar blow molding machines for plastic and PET jars. Multi-cavity automatic production from factory direct.'
     }
     'YC_Series_Semi_Auto_PET_Blowing_Machine.html' = @{
+        Title       = 'YC Series Semi Auto PET Blowing Machine'
         Keywords    = 'KlWL Machinery, semi automatic PET blowing machine, semi auto blow molding machine, plastic bottle making machine'
         Description = 'KlWL Machinery YC Series semi-automatic PET blowing machines - cost-effective bottle production for water, oil and packaging bottles.'
     }
     'YCQ_Series_Economic_Blow_Molding_Machine.html' = @{
+        Title       = 'YCQ Series Economic Blow Molding Machine'
         Keywords    = 'KlWL Machinery, economic blow molding machine, PET bottle blowing machine, semi automatic PET blowing machine'
         Description = 'KlWL Machinery YCQ Series economic blow molding machines - reliable PET bottle production at competitive factory-direct pricing.'
     }
     'QH_Series.html' = @{
+        Title       = 'QH Series High Speed PET Blowing Machine'
         Keywords    = 'KlWL Machinery, high speed bottle blowing machine, PET bottle blowing machine, stretch blow molding machine'
         Description = 'KlWL Machinery QH Series high-performance PET bottle blowing machines for high-speed production lines.'
     }
     'QJ_Series.html' = @{
+        Title       = 'QJ Series Auto Jar Making Machine'
         Keywords    = 'KlWL Machinery, jar making machine, jar blow molding machine, plastic jar making machine'
         Description = 'KlWL Machinery QJ Series auto jar making machines - multi-cavity blow molding for PET and plastic jars.'
     }
     'Auxiliary_Machine_Series.html' = @{
+        Title       = 'Auxiliary Machine Series'
         Keywords    = 'KlWL Machinery, air compressor for bottle blowing line, industrial chiller for blow molding, cold dryer for PET blowing line'
         Description = 'KlWL Machinery auxiliary equipment for bottle blowing lines - air compressors, chillers, cold dryers and more.'
     }
     'Blowing_Machine_Mold.html' = @{
+        Title       = 'Blowing Machine Mold'
         Keywords    = 'KlWL Machinery, PET bottle mold, blow mold, blowing machine mold'
         Description = 'KlWL Machinery blow molds and PET bottle molds - precision tooling for bottle blowing production lines.'
     }
     'Capping_Machine_Series.html' = @{
+        Title       = 'Capping Machine Series'
         Keywords    = 'KlWL Machinery, bottle capping machine, capping machine, multi cavity capping machine'
         Description = 'KlWL Machinery capping machine series - high-speed multi-cavity capping for PET bottle production lines.'
     }
@@ -427,7 +512,8 @@ Get-ChildItem -Path $SiteRoot -Recurse -Filter *.html -File | ForEach-Object {
         $keywords = Get-Tier1Keywords 3
     } elseif ($SeriesSeo.ContainsKey($webPath)) {
         $s = $SeriesSeo[$webPath]
-        $title = Get-CleanPageTitle $rawTitle
+        $name = if ($s.Title) { $s.Title } else { Get-ProductNameFromFilename $webPath }
+        $title = "$name | $Brand"
         $description = $s.Description
         $keywords = $s.Keywords
     } elseif ($webPath -like 'products_list/*') {
@@ -459,11 +545,26 @@ Get-ChildItem -Path $SiteRoot -Recurse -Filter *.html -File | ForEach-Object {
         $description = "$Brand news and updates on PET bottle blowing machines, blow molding technology and global exhibitions."
         $keywords = Get-Tier1Keywords 3
     } elseif (Is-ProductDetailPage $webPath $content) {
-        $title = Get-CleanPageTitle $rawTitle
+        $title = Get-PyramidProductTitle $content $webPath $rawTitle
         $productName = Get-ProductNameFromTitle $title
         $m = [regex]::Match($content, '<meta name="description" content="([^"]*)"')
         $rawDesc = if ($m.Success) { $m.Groups[1].Value } else { '' }
         $description = Fix-Description $rawDesc $title
+        $spamDesc = ($rawDesc -match '^(best|newest|quality|The \d+ cavity|\d+ cavity pet)' -or (Test-IsSpamProductTitle $rawDesc) -or ($rawDesc.Length -ge 80 -and $productName.Length -ge 8 -and $rawDesc -notmatch [regex]::Escape($productName.Substring(0, 8))))
+        if ($spamDesc -or $description.Length -lt 50) {
+            $description = "$productName from $Brand. PET and plastic bottle blowing machine - factory direct from China, export worldwide."
+        }
+        $keywords = Get-PyramidKeywords $productName $webPath
+    } elseif ($webPath -match '\.(html)$' -and $webPath -notlike 'news_*' -and $webPath -notlike 'video/*' -and $webPath -notlike 'yingyong/*' -and $webPath -notlike 'shouhou/*' -and $webPath -notlike 'jianjie/*' -and (Get-ProductH1FromContent $content)) {
+        # Product-style pages with H1 but outside strict path rules (e.g. capping_machine lowercase)
+        $title = Get-PyramidProductTitle $content $webPath $rawTitle
+        $productName = Get-ProductNameFromTitle $title
+        $m = [regex]::Match($content, '<meta name="description" content="([^"]*)"')
+        $rawDesc = if ($m.Success) { $m.Groups[1].Value } else { '' }
+        $description = Fix-Description $rawDesc $title
+        if ((Test-IsSpamProductTitle $rawDesc) -or $description.Length -lt 50) {
+            $description = "$productName from $Brand. PET and plastic bottle blowing machine - factory direct from China, export worldwide."
+        }
         $keywords = Get-PyramidKeywords $productName $webPath
     } else {
         $title = Get-CleanPageTitle $rawTitle
@@ -526,7 +627,13 @@ Get-ChildItem -Path $SiteRoot -Recurse -Filter *.html -File | ForEach-Object {
     # Global brand junk cleanup in remaining body text (og already fixed)
     $content = $content -replace [regex]::Escape($BrandJunk), $Brand
 
-    if ($content -ne $orig) {
+    $mustWrite = ($content -cne $orig)
+    if (-not $mustWrite -and (Is-ProductDetailPage $webPath $orig)) {
+        $expectedTitle = Get-PyramidProductTitle $orig $webPath $rawTitle
+        if ($expectedTitle -cne (Get-CleanPageTitle $rawTitle)) { $mustWrite = $true }
+    }
+
+    if ($mustWrite) {
         [System.IO.File]::WriteAllText($_.FullName, $content, $Utf8)
         $updated++
     }
